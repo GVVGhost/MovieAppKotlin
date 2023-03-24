@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingStart="36dp"
+    android:paddingEnd="36dp"
+    tools:context=".MovieDetailActivity"
+    tools:ignore="SpeakableTextPresentCheck">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="8dp">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cardViewFavoriteDetail"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                app:cardCornerRadius="12dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <ImageView
+                    android:id="@+id/imageViewPosterDetail"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:adjustViewBounds="true"
+                    android:contentDescription="@null"
+                    android:maxWidth="300dp"
+                    android:minWidth="200dp"
+                    tools:src="@tools:sample/avatars" />
+            </androidx.cardview.widget.CardView>
+
+            <ImageView
+                android:id="@+id/imageViewFavoriteDetail"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:background="@drawable/bg_bookmark"
+                android:contentDescription="@null"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:src="@drawable/ic_bookmark_unchkd" />
+
+            <TextView
+                android:id="@+id/textViewMovieTitleDetail"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="40dp"
+                android:maxLines="2"
+                android:padding="4dp"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                app:layout_constraintStart_toEndOf="@id/cardViewFavoriteDetail"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:text="Movie title" />
+
+            <TextView
+                android:id="@+id/textViewReleaseDateDetail"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="40dp"
+                android:maxLines="1"
+                android:padding="4dp"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                app:layout_constraintStart_toEndOf="@id/cardViewFavoriteDetail"
+                app:layout_constraintTop_toBottomOf="@id/textViewMovieTitleDetail"
+                tools:text="20.02.2020" />
+
+            <TextView
+                android:id="@+id/textViewContentDetail"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:padding="4dp"
+                android:textSize="14sp"
+                android:textStyle="italic"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/imageViewFavoriteDetail"
+                app:layout_constraintStart_toEndOf="@id/cardViewFavoriteDetail"
+                app:layout_constraintTop_toBottomOf="@id/textViewReleaseDateDetail"
+                tools:text="Content description:\nsome text some text some text some text \nsome text text some text some text text some text \nsome text text some text some text" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycleViewVideosDetail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:nestedScrollingEnabled="false"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            tools:itemCount="3"
+            tools:listitem="@layout/video_item" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycleViewReviewsDetail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:nestedScrollingEnabled="false"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            tools:itemCount="3"
+            tools:listitem="@layout/review_item" />
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

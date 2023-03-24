@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">MovieAppKotlin</string>
+    <string name="tvTitleLogin">Hi! Let\'s sign in ;)</string>
+    <string name="etEmail">Hi! Let\'s sign in ;)</string>
+    <string name="your_email">Email</string>
+    <string name="your_password">Password</string>
+    <string name="button_sign_in">Sign In</string>
+    <string name="do_not_have_an_account">Do not have an account?</string>
+    <string name="button_sign_up">Sign Up</string>
+    <string name="new_account_registration">New account registration</string>
+    <string name="list_view_menu_item">List view</string>
+    <string name="table_view_menu_item">Table view</string>
+    <string name="sign_out">Sign out</string>
+    <string name="nav_open">Open</string>
+    <string name="nav_close">Close</string>
+    <string name="text_release_date">Release date:</string>
+    <string name="text_average_rating">Average rating:</string>
+    <string name="movies_marked">Marked movies</string>
+    <string name="movies_all">All movies</string>
+    <string name="user_profile">User profile</string>
+</resources>

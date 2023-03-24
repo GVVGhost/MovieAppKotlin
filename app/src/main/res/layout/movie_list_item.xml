@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:cardCornerRadius="8dp"
+    app:cardUseCompatPadding="true">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="150dp"
+        android:maxHeight="200dp"
+        android:paddingEnd="4dp"
+        tools:ignore="RtlSymmetry">
+
+        <ImageView
+            android:id="@+id/imageViewPosterList"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:minHeight="100dp"
+            android:adjustViewBounds="true"
+            android:layout_marginEnd="6dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:src="@tools:sample/avatars" />
+
+        <TextView
+            android:id="@+id/textViewMovieTitleList"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_marginTop="6dp"
+            android:maxLines="1"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toEndOf="@+id/imageViewPosterList"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:ellipsize="end"
+            tools:text="Movie title" />
+
+        <TextView
+            android:id="@+id/textViewReleaseTextList"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:text="@string/text_release_date"
+            android:textSize="16sp"
+            app:layout_constraintStart_toEndOf="@+id/imageViewPosterList"
+            app:layout_constraintTop_toBottomOf="@+id/textViewMovieTitleList" />
+
+        <TextView
+            android:id="@+id/textViewReleaseDateList"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="@+id/textViewReleaseTextList"
+            app:layout_constraintStart_toEndOf="@+id/textViewReleaseTextList"
+            app:layout_constraintTop_toTopOf="@+id/textViewReleaseTextList"
+            tools:text="20.02.2020" />
+
+        <TextView
+            android:id="@+id/textViewAverageRatingTextList"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:text="@string/text_average_rating"
+            android:textSize="16sp"
+            app:layout_constraintStart_toEndOf="@id/imageViewPosterList"
+            app:layout_constraintTop_toBottomOf="@id/textViewReleaseTextList" />
+
+        <TextView
+            android:id="@+id/textViewRatingList"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="@+id/textViewAverageRatingTextList"
+            app:layout_constraintStart_toEndOf="@id/textViewAverageRatingTextList"
+            app:layout_constraintTop_toTopOf="@id/textViewAverageRatingTextList"
+            tools:text="9.0" />
+
+        <ImageView
+            android:id="@+id/imageViewList"
+            android:layout_width="0dp"
+            android:layout_height="2dp"
+            android:layout_marginStart="6dp"
+            android:layout_marginTop="6dp"
+            android:adjustViewBounds="true"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/imageViewPosterList"
+            app:layout_constraintTop_toBottomOf="@id/textViewAverageRatingTextList"
+            app:srcCompat="@drawable/line_separator_horizontal" />
+
+        <TextView
+            android:id="@+id/textViewContentList"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_marginBottom="6dp"
+            android:ellipsize="end"
+            android:maxLines="3"
+            android:textAlignment="inherit"
+            android:textSize="16sp"
+            android:textStyle="italic"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/imageViewPosterList"
+            app:layout_constraintTop_toBottomOf="@id/imageViewList"
+            app:layout_constraintBottom_toBottomOf="parent"
+            tools:maxLines="3"
+            tools:ellipsize="end"
+            tools:text="Content description:\nsome text some text some text some text some text" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.cardview.widget.CardView>
