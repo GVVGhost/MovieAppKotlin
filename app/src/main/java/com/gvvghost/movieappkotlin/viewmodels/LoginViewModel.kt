@@ -1,40 +1,34 @@
 package com.gvvghost.movieappkotlin.viewmodels
 
-import android.app.Application
 import android.content.SharedPreferences
 import android.util.Log
-import android.util.Patterns
-import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import com.gvvghost.movieappkotlin.LoginActivity
-import com.gvvghost.movieappkotlin.LoginActivity.Companion.EMAIL
-import com.gvvghost.movieappkotlin.LoginActivity.Companion.IS_LOGGED_IN
-import com.gvvghost.movieappkotlin.LoginActivity.Companion.PASSWORD
-import com.gvvghost.movieappkotlin.database.AppDatabase
-import com.gvvghost.movieappkotlin.database.User
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
-import io.reactivex.rxjava3.disposables.CompositeDisposable
-import io.reactivex.rxjava3.functions.Consumer
-import io.reactivex.rxjava3.schedulers.Schedulers
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.gvvghost.movieappkotlin.api.ApiHelper
+import com.gvvghost.movieappkotlin.database.DatabaseHelper
+import com.gvvghost.movieappkotlin.database.entity.User
+import com.gvvghost.movieappkotlin.util.Constants.EMAIL
+import com.gvvghost.movieappkotlin.util.Constants.IS_LOGGED_IN
+import com.gvvghost.movieappkotlin.util.Constants.PASSWORD
+import com.gvvghost.movieappkotlin.util.Credentials.isPasswordNotValid
+import com.gvvghost.movieappkotlin.util.Credentials.isUserNameNotValid
+import kotlinx.coroutines.launch
 
-class LoginViewModel(application: Application) : AndroidViewModel(application) {
+class LoginViewModel(
+    private val apiHelper: ApiHelper,
+    private val databaseHelper: DatabaseHelper,
+    private val sharedPreferences: SharedPreferences
+) : ViewModel() {
 
-    companion object {
-        private const val TAG = "LoginViewModel"
-        private const val MIN_PASSWORD_LENGTH = 5
-    }
-
-    private var appDao = AppDatabase.getInstance(application).appDao()
-    private val compositeDisposable = CompositeDisposable()
     private val error: MutableLiveData<String> = MutableLiveData<String>()
     private val user: MutableLiveData<User> = MutableLiveData<User>()
-    private val sPref: SharedPreferences = application
-        .getSharedPreferences(LoginActivity.MY_PREF, AppCompatActivity.MODE_PRIVATE)
+    fun getError(): LiveData<String> = error
+    fun getUser(): LiveData<User> = user
 
     fun autologin() {
-        with(sPref) {
+        with(sharedPreferences) {
             if (contains(IS_LOGGED_IN)
                 && getBoolean(IS_LOGGED_IN, false)
                 && contains(EMAIL)
@@ -48,60 +42,46 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun login(email: String, password: String) {
-        if (areUserCredentialsValid(email, password)) validateUser(
-            email,
-            {
-                if (password == it.password) {
-                    user.value = it
-                    updateSharedPref(it)
-                } else error.value = "Incorrect password"
-            }, {
-                error.value = "A login error occurred while working with the database"
-                Log.d(TAG, "login: ${it.message}")
+        if (areUserCredentialsValid(email, password)) {
+            viewModelScope.launch {
+                try {
+                    val fetchedUser = databaseHelper.getUser(email)
+                    fetchedUser?.let {
+                        if (password == it.password) {
+                            user.postValue(it)
+                            updateSharedPref(it)
+                        } else error.postValue("Incorrect password")
+                    } ?: run { error.postValue("User not found") }
+                } catch (e: Exception) {
+                    error.value = "A login error occurred while working with the local database"
+                    Log.d("Login", e.toString())
+                }
             }
-        )
+        }
     }
 
     fun register(email: String, password: String) {
-        if (areUserCredentialsValid(email, password)) validateUser(
-            email,
-            { error.value = "User already exist" },
-            {
-                with(User(email, password)) {
-                    val disposable = appDao.insertUser(this)
-                        .subscribeOn(Schedulers.io())
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(
-                            {
-                                user.value = this
-                                updateSharedPref(this)
-                            },
-                            {
-                                error.value = "Registration failed. " +
-                                        "Try again or relaunch/reinstall app"
-                                Log.d(TAG, "register, failed: ${it.message}")
-                            }
-                        )
-                    compositeDisposable.add(disposable)
+        if (areUserCredentialsValid(email, password)) {
+            viewModelScope.launch {
+                try {
+                    val fetchedUser = databaseHelper.getUser(email)
+                    fetchedUser?.let {
+                        error.postValue("User already exists")
+                    } ?: run {
+                        val newUser = User(email, password)
+                        databaseHelper.insertUser(newUser)
+                        updateSharedPref(newUser)
+                    }
+                } catch (e: java.lang.Exception) {
+                    error.value = "Registration failed. Try again or relaunch/reinstall app"
+                    Log.d("Register", e.toString())
                 }
             }
-        )
-    }
-
-    private fun validateUser(
-        email: String,
-        success: Consumer<User>,
-        error: Consumer<Throwable>
-    ) {
-        val disposable = appDao.getUser(email)
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(success, error)
-        compositeDisposable.add(disposable)
+        }
     }
 
     private fun updateSharedPref(user: User) {
-        sPref.edit()
+        sharedPreferences.edit()
             .putString(PASSWORD, user.password)
             .putBoolean(IS_LOGGED_IN, true)
             .putString(EMAIL, user.email)
@@ -116,20 +96,4 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
             error.value = "Invalid password"
             false
         } else true
-
-    private fun isUserNameNotValid(username: String): Boolean =
-        if (username.contains("@")) !Patterns.EMAIL_ADDRESS.matcher(username).matches()
-        else username.trim().isEmpty()
-
-    private fun isPasswordNotValid(password: String): Boolean =
-        password.trim().length <= MIN_PASSWORD_LENGTH
-
-    fun getUser(): LiveData<User> = user
-
-    fun getError(): LiveData<String> = error
-
-    override fun onCleared() {
-        super.onCleared()
-        compositeDisposable.dispose()
-    }
 }

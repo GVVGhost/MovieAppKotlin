@@ -1,101 +1,97 @@
 package com.gvvghost.movieappkotlin.viewmodels
 
-import android.app.Application
 import android.content.SharedPreferences
 import android.util.Log
-import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import com.gvvghost.movieappkotlin.LoginActivity
-import com.gvvghost.movieappkotlin.LoginActivity.Companion.EMAIL
-import com.gvvghost.movieappkotlin.LoginActivity.Companion.IS_LOGGED_IN
-import com.gvvghost.movieappkotlin.LoginActivity.Companion.PASSWORD
-import com.gvvghost.movieappkotlin.api.ApiFactory
-import com.gvvghost.movieappkotlin.database.AppDao
-import com.gvvghost.movieappkotlin.database.AppDatabase
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.gvvghost.movieappkotlin.api.ApiHelper
+import com.gvvghost.movieappkotlin.database.DatabaseHelper
 import com.gvvghost.movieappkotlin.pojo.Movie
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
-import io.reactivex.rxjava3.disposables.CompositeDisposable
-import io.reactivex.rxjava3.schedulers.Schedulers
+import com.gvvghost.movieappkotlin.util.Constants.EMAIL
+import com.gvvghost.movieappkotlin.util.Constants.IS_LOGGED_IN
+import com.gvvghost.movieappkotlin.util.Constants.LANG_ENG
+import com.gvvghost.movieappkotlin.util.Constants.PASSWORD
+import com.gvvghost.movieappkotlin.util.Constants.SORT_DESC
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 
-class ContentViewModel(application: Application) : AndroidViewModel(application) {
+class ContentViewModel(
+    private val apiHelper: ApiHelper,
+    private val databaseHelper: DatabaseHelper,
+    private val sharedPreferences: SharedPreferences
+) : ViewModel() {
 
     companion object {
         private const val TAG = "ContentViewModel"
     }
 
     private var page = 1
-    private val compositeDisposable: CompositeDisposable = CompositeDisposable()
-    private val appDao: AppDao = AppDatabase.getInstance(application).appDao()
     private val isLoading: MutableLiveData<Boolean> = MutableLiveData<Boolean>()
     private val movies: MutableLiveData<List<Movie>> = MutableLiveData<List<Movie>>()
-    private val sPref: SharedPreferences = application
-        .getSharedPreferences(LoginActivity.MY_PREF, AppCompatActivity.MODE_PRIVATE)
 
     init {
         isLoading.value = false
-        loadMovies()
+        fetchMovies()
     }
 
     fun getMovies(): LiveData<List<Movie>> = movies
+
     fun getIsLoading(): LiveData<Boolean> = isLoading
-    fun isMovieListEmpty():Boolean {
+
+    fun isMovieListEmpty(): Boolean {
         movies.value?.run { if (this.isNotEmpty()) return false }
         return true
     }
 
-    fun loadMovies(addToExistList: Boolean = true) {
-        if (isLoading.value != null && isLoading.value == false) {
-            val disposable = ApiFactory.apiService.loadMovies(page = page)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .doOnSubscribe { isLoading.postValue(true) }
-                .doAfterTerminate { isLoading.postValue(false) }
-                .subscribe(
-                    {
-                        it.loadedMovies?.apply {
-                            if (addToExistList && movies.value != null) {
-                                val listOfMovies = movies.value as MutableList
-                                listOfMovies.addAll(this)
-                                movies.postValue(listOfMovies)
-                            } else movies.postValue(it.loadedMovies)
-                            Log.d(TAG, "loaded page: $page")
-                            page++
-                        }
-                    },
-                    { Log.d(TAG, "loadMovies, failed: ${it.message}") }
-                )
-            compositeDisposable.add(disposable)
+    fun fetchMovies(addToExistList: Boolean = true) {
+        if (isLoading.value == null || isLoading.value == true) return
+        viewModelScope.launch {
+            isLoading.postValue(true)
+            try {
+                coroutineScope {
+                    val deferred = async {
+                        apiHelper.loadMovies(page, LANG_ENG, SORT_DESC, 4)
+                    }
+                    val fetchedMovies = deferred.await()
+                    val currentList = mutableListOf<Movie>()
+                    if (addToExistList) movies.value?.let { currentList.addAll(it) }
+                    fetchedMovies.movieList?.let { currentList.addAll(it) }
+                    movies.postValue(currentList)
+                    Log.d(TAG, "loaded page: $page")
+                    page++
+                }
+            } catch (e: Exception) {
+                Log.d(TAG, "fetchMovies: ${e.message}")
+            } finally {
+                isLoading.postValue(false)
+            }
         }
     }
 
-    fun loadMarkedMovies() {
-        if (isLoading.value != null && isLoading.value == true) return
+    fun fetchMarkedMovies() {
+        if (isLoading.value == null || isLoading.value == true) return
         page = 1
-        val disposable = appDao.getAllFavoriteMovies()
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .doOnSubscribe { isLoading.value = true }
-            .doAfterTerminate { isLoading.value = false }
-            .subscribe({
-                movies.value = it
-            }, {
-                Log.d(TAG, "loadMarkedMovies, failed: ${it.message}")
-            })
-        compositeDisposable.add(disposable)
+        viewModelScope.launch {
+            isLoading.postValue(true)
+            try {
+                val fetchedMovies = databaseHelper.getAllFavoriteMovies()
+                movies.postValue(fetchedMovies)
+            } catch (e: Exception) {
+                Log.d(TAG, "fetchMarkedMovies: ${e.message}")
+            } finally {
+                isLoading.postValue(false)
+            }
+        }
     }
 
     fun logout() {
-        sPref.edit()
+        sharedPreferences.edit()
             .putBoolean(IS_LOGGED_IN, false)
             .remove(PASSWORD)
             .remove(EMAIL)
             .apply()
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        compositeDisposable.dispose()
     }
 }

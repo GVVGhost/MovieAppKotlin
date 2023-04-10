@@ -12,21 +12,11 @@ import com.bumptech.glide.Glide
 import com.gvvghost.movieappkotlin.R
 import com.gvvghost.movieappkotlin.R.drawable.*
 import com.gvvghost.movieappkotlin.pojo.Movie
+import com.gvvghost.movieappkotlin.util.Constants.BASE_URL_IMAGE
+import com.gvvghost.movieappkotlin.util.Constants.POSTER_SIZE_W154
 import java.io.Serializable
 
 class MoviesAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-
-    companion object {
-        // available poster sizes: w92, w154, w185, w342, w500, w780, original
-        private const val W92 = "w92"
-        private const val W154 = "w154"
-        private const val W185 = "w185"
-        private const val W342 = "w342"
-        private const val W500 = "w500"
-        private const val W780 = "w780"
-        private const val ORIGINAL = "original"
-        private const val POSTER_BASE_URL = "http://image.tmdb.org/t/p/"
-    }
 
     var onReachEndListener: OnReachEndListener? = null
     var onMovieClickListener: OnMovieClickListener? = null
@@ -64,7 +54,7 @@ class MoviesAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         if (layoutType == LayoutType.GRID && holder is GridViewHolder) {
             holder.apply {
                 Glide.with(itemView)
-                    .load(POSTER_BASE_URL + W154 + movie.posterPath)
+                    .load(BASE_URL_IMAGE + POSTER_SIZE_W154 + movie.posterPath)
                     .into(posterIv)
                 titleTv.text = movie.title
                 ratingTv.text = movie.voteAverage.toString()
@@ -79,7 +69,7 @@ class MoviesAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             difForPreload = 2
             holder.apply {
                 Glide.with(itemView)
-                    .load(POSTER_BASE_URL + W154 + movie.posterPath)
+                    .load(BASE_URL_IMAGE + POSTER_SIZE_W154 + movie.posterPath)
                     .into(posterIv)
                 titleTv.text = movie.title
                 ratingTv.text = movie.voteAverage.toString()
@@ -95,12 +85,14 @@ class MoviesAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     override fun getItemCount(): Int = movies.size
 
+    // TODO There is another way to write a ViewHolder
     class GridViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val posterIv: ImageView = itemView.findViewById(R.id.imageViewPosterGrid)
         val titleTv: TextView = itemView.findViewById(R.id.textViewMovieTitleGrid)
         val ratingTv: TextView = itemView.findViewById(R.id.textViewRatingGrid)
     }
 
+    // TODO There is another way to write a ViewHolder
     class ListViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val posterIv: ImageView = itemView.findViewById(R.id.imageViewPosterList)
         val titleTv: TextView = itemView.findViewById(R.id.textViewMovieTitleList)
@@ -109,6 +101,7 @@ class MoviesAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         val ratingTv: TextView = itemView.findViewById(R.id.textViewRatingList)
     }
 
+    // TODO `:Serializable` could be removed (required to checking out)
     enum class LayoutType(val layout: String) : Serializable {
         GRID("GRID"), LIST("LIST");
     }

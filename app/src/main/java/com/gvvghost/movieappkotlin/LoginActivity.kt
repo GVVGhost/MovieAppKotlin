@@ -3,19 +3,21 @@ package com.gvvghost.movieappkotlin
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
+import com.gvvghost.movieappkotlin.api.ApiHelperImpl
+import com.gvvghost.movieappkotlin.api.RetrofitBuilder
+import com.gvvghost.movieappkotlin.database.DatabaseBuilder
+import com.gvvghost.movieappkotlin.database.DatabaseHelperImpl
 import com.gvvghost.movieappkotlin.databinding.ActivityLoginBinding
+import com.gvvghost.movieappkotlin.util.Constants.MY_PREF
+import com.gvvghost.movieappkotlin.util.UIMessages.showToast
 import com.gvvghost.movieappkotlin.viewmodels.LoginViewModel
+import com.gvvghost.movieappkotlin.viewmodels.factory.ViewModelFactory
 
 class LoginActivity : AppCompatActivity() {
 
     companion object {
-        const val MY_PREF = "mypref"
-        const val IS_LOGGED_IN = "isLoggedIn"
-        const val EMAIL = "email"
-        const val PASSWORD = "password"
         fun newIntent(context: Context) = Intent(context, LoginActivity::class.java)
     }
 
@@ -27,7 +29,14 @@ class LoginActivity : AppCompatActivity() {
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        viewModel = ViewModelProvider(this).get(LoginViewModel::class.java)
+        viewModel = ViewModelProvider(
+            this, ViewModelFactory(
+                ApiHelperImpl(RetrofitBuilder.apiService),
+                DatabaseHelperImpl(DatabaseBuilder.getInstance(applicationContext)),
+                application.getSharedPreferences(MY_PREF, MODE_PRIVATE)
+            )
+        )[LoginViewModel::class.java]
+
         binding.buttonLogin.setOnClickListener {
             viewModel.login(
                 binding.etEmail.text.toString(),
@@ -39,9 +48,7 @@ class LoginActivity : AppCompatActivity() {
                 RegistrationActivity.newIntent(this, binding.etEmail.text.toString())
             )
         }
-        viewModel.getError().observe(this) {
-            Toast.makeText(this, it, Toast.LENGTH_SHORT).show()
-        }
+        viewModel.getError().observe(this) { showToast(this@LoginActivity, it) }
         viewModel.getUser().observe(this) {
             startActivity(ContentActivity.newIntent(this, it.email))
             finish()

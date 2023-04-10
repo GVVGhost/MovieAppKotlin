@@ -9,7 +9,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.gvvghost.movieappkotlin.R
 import com.gvvghost.movieappkotlin.pojo.AuthorReview
-import kotlinx.android.synthetic.main.review_item.view.*
+
 
 class ReviewAdapter : RecyclerView.Adapter<ReviewAdapter.ReviewViewHolder>() {
 
@@ -45,6 +45,8 @@ class ReviewAdapter : RecyclerView.Adapter<ReviewAdapter.ReviewViewHolder>() {
 
     override fun getItemCount(): Int = reviews.size
 
+
+    // TODO There is another way to write a ViewHolder
     class ReviewViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val cvReview: CardView = itemView.findViewById(R.id.cardViewReview)
         val tvAuthorName: TextView = itemView.findViewById(R.id.textViewAuthorName)

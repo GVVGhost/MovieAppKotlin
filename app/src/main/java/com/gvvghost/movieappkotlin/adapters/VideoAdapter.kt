@@ -31,6 +31,7 @@ class VideoAdapter : RecyclerView.Adapter<VideoAdapter.VideoViewHolder>() {
 
     override fun getItemCount(): Int = videos.size
 
+    // TODO There is another way to write a ViewHolder
     class VideoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val textViewVideoName: TextView = itemView.findViewById(R.id.textViewVideoName)
     }

@@ -2,10 +2,10 @@ package com.gvvghost.movieappkotlin
 
 import android.content.Context
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import com.gvvghost.movieappkotlin.LoginActivity.Companion.EMAIL
+import androidx.appcompat.app.AppCompatActivity
 import com.gvvghost.movieappkotlin.databinding.ActivityUserProfileBinding
+import com.gvvghost.movieappkotlin.util.Constants.EMAIL
 
 class UserProfileActivity : AppCompatActivity() {
 

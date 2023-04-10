@@ -1,40 +1,39 @@
-package com.gvvghost.movieappkotlin.database
+package com.gvvghost.movieappkotlin.database.dao
 
 import androidx.lifecycle.LiveData
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy.Companion.IGNORE
 import androidx.room.Query
+import com.gvvghost.movieappkotlin.database.entity.User
 import com.gvvghost.movieappkotlin.pojo.Movie
-import io.reactivex.rxjava3.core.Completable
-import io.reactivex.rxjava3.core.Single
 
 @Dao
 interface AppDao {
     @Query("SELECT * FROM favorite_movies")
-    fun getAllFavoriteMovies(): Single<List<Movie>>
+    suspend fun getAllFavoriteMovies(): List<Movie>
 
     @Query("SELECT * FROM favorite_movies WHERE id = :movieId")
-    fun getFavoriteMovie(movieId: Int): LiveData<Movie>
+    suspend fun getFavoriteMovie(movieId: Int): Movie?
 
     @Insert
-    fun insertMovie(movie: Movie): Completable
+    suspend fun insertMovie(movie: Movie)
 
     @Query("DELETE FROM favorite_movies WHERE id = :movieId")
-    fun removeMovie(movieId: Int): Completable
+    suspend fun removeMovie(movieId: Int)
 
     @Query("SELECT * FROM registered_users")
-    fun getAllUsers(): Single<List<User>>
+    suspend fun getAllUsers(): List<User>
 
     @Query("SELECT * FROM registered_users WHERE email = :userName")
-    fun getUser(userName: String): Single<User>
+    suspend fun getUser(userName: String): User?
 
     @Insert(onConflict = IGNORE)
-    fun insertUser(user: User): Completable
+    suspend fun insertUser(user: User)
 
     @Query("DELETE FROM registered_users WHERE email = :userEmail")
-    fun removeUser(userEmail: String): Completable
+    suspend fun removeUser(userEmail: String)
 
     @Query("DELETE FROM registered_users")
-    fun removeAll(): Completable
+    suspend fun removeAll()
 }

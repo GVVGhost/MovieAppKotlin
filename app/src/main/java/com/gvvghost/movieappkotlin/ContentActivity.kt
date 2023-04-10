@@ -7,16 +7,13 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
-import android.os.Build.VERSION.SDK_INT
-import android.os.Build.VERSION_CODES.TIRAMISU
 import android.os.Bundle
-import android.os.PersistableBundle
+import android.provider.ContactsContract.CommonDataKinds.Email
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View.GONE
 import android.view.View.VISIBLE
-import android.widget.Toast
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.getSystemService
@@ -30,9 +27,17 @@ import com.gvvghost.movieappkotlin.adapters.MoviesAdapter
 import com.gvvghost.movieappkotlin.adapters.MoviesAdapter.LayoutType
 import com.gvvghost.movieappkotlin.adapters.MoviesAdapter.LayoutType.GRID
 import com.gvvghost.movieappkotlin.adapters.MoviesAdapter.LayoutType.LIST
+import com.gvvghost.movieappkotlin.api.ApiHelperImpl
+import com.gvvghost.movieappkotlin.api.RetrofitBuilder
+import com.gvvghost.movieappkotlin.database.DatabaseBuilder
+import com.gvvghost.movieappkotlin.database.DatabaseHelperImpl
 import com.gvvghost.movieappkotlin.databinding.ActivityContentBinding
 import com.gvvghost.movieappkotlin.pojo.Movie
+import com.gvvghost.movieappkotlin.util.Constants
+import com.gvvghost.movieappkotlin.util.Constants.EMAIL
+import com.gvvghost.movieappkotlin.util.UIMessages.showToast
 import com.gvvghost.movieappkotlin.viewmodels.ContentViewModel
+import com.gvvghost.movieappkotlin.viewmodels.factory.ViewModelFactory
 
 class ContentActivity : AppCompatActivity() {
 
@@ -47,7 +52,7 @@ class ContentActivity : AppCompatActivity() {
         private const val VIEW_TYPE_PARAM = "viewType"
         fun newIntent(context: Context, email: String): Intent {
             val intent = Intent(context, ContentActivity::class.java)
-            intent.putExtra(LoginActivity.EMAIL, email)
+            intent.putExtra(Constants.EMAIL, email)
             return intent
         }
     }
@@ -61,7 +66,6 @@ class ContentActivity : AppCompatActivity() {
             val lt = this.getString(VIEW_TYPE_PARAM)
             layoutType.value = if (LIST.layout == lt) LIST else GRID
         } ?: run { layoutType.value = GRID }
-
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         val gridLM = GridLayoutManager(this, if (isOrientationLandscape()) 5 else 3)
         val linearLM = LinearLayoutManager(this)
@@ -74,7 +78,14 @@ class ContentActivity : AppCompatActivity() {
             layoutManager = if (layoutType.value == GRID) gridLM else linearLM
         }
 
-        viewModel = ViewModelProvider(this)[ContentViewModel::class.java]
+        viewModel = ViewModelProvider(
+            this, ViewModelFactory(
+                ApiHelperImpl(RetrofitBuilder.apiService),
+                DatabaseHelperImpl(DatabaseBuilder.getInstance(applicationContext)),
+                application.getSharedPreferences(Constants.MY_PREF, MODE_PRIVATE)
+            )
+        )[ContentViewModel::class.java]
+
         viewModel.getMovies().observe(this) { adapter.movies = it }
         viewModel.getIsLoading().observe(this) { isLoading ->
             binding.progressBarLoading.visibility = if (isLoading) VISIBLE else GONE
@@ -90,11 +101,17 @@ class ContentActivity : AppCompatActivity() {
         drawerLayout.addDrawerListener(actionBarDrawerToggle)
         actionBarDrawerToggle.syncState()
         adapter.onReachEndListener = object : MoviesAdapter.OnReachEndListener {
-            override fun onReachEnd() = viewModel.loadMovies()
+            override fun onReachEnd() = viewModel.fetchMovies()
         }
         adapter.onMovieClickListener = object : MoviesAdapter.OnMovieClickListener {
-            override fun onMovieClick(movie: Movie) =
-                startActivity(MovieDetailActivity.newIntent(this@ContentActivity, movie))
+            override fun onMovieClick(movie: Movie) {
+                movie.id?.run {
+                    startActivity(MovieDetailActivity.newIntent(this@ContentActivity, this))
+                } ?: run {
+                    Log.d("TAG", "onMovieClick: movie id - ${movie.id}")
+                    showToast(this@ContentActivity, "Error. Missing movie data")
+                }
+            }
         }
 
         binding.navigationMenu.setNavigationItemSelectedListener {
@@ -103,7 +120,7 @@ class ContentActivity : AppCompatActivity() {
                 R.id.movies_marked -> {
                     if (!isSetOnMarked) {
                         isSetOnMarked = true
-                        viewModel.loadMarkedMovies()
+                        viewModel.fetchMarkedMovies()
                         adapter.onReachEndListener = null
                     }
                     result = true
@@ -111,15 +128,15 @@ class ContentActivity : AppCompatActivity() {
                 R.id.movies_all -> {
                     if (isSetOnMarked) {
                         isSetOnMarked = false
-                        viewModel.loadMovies(false)
+                        viewModel.fetchMovies(false)
                         adapter.onReachEndListener = object : MoviesAdapter.OnReachEndListener {
-                            override fun onReachEnd() = viewModel.loadMovies()
+                            override fun onReachEnd() = viewModel.fetchMovies()
                         }
                     }
                     result = true
                 }
                 R.id.user_profile -> {
-                    val username = intent.getStringExtra(LoginActivity.EMAIL)
+                    val username = intent.getStringExtra(EMAIL)
                     username?.also {
                         startActivity(
                             UserProfileActivity.newIntent(
@@ -129,11 +146,7 @@ class ContentActivity : AppCompatActivity() {
                         )
                     } ?: run {
                         Log.d(TAG, "intent extra username is null")
-                        Toast.makeText(
-                            this@ContentActivity,
-                            "Launch of user profile activity failed, username is null",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        showToast(this@ContentActivity,"Error, user now found")
                     }
                     result = true
                 }
@@ -175,10 +188,6 @@ class ContentActivity : AppCompatActivity() {
     private fun isOrientationLandscape(): Boolean =
         resources.configuration.orientation == ORIENTATION_LANDSCAPE
 
-    private fun showToast(message: String, duration: Int = Toast.LENGTH_SHORT) {
-        if (message.isNotBlank()) Toast.makeText(this, message, duration).show()
-    }
-
     private val networkRequest = NetworkRequest.Builder()
         .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
         .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
@@ -189,13 +198,12 @@ class ContentActivity : AppCompatActivity() {
         : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
             super.onAvailable(network)
-//            showToast("Internet connection was established")
-            if (!isSetOnMarked && viewModel.isMovieListEmpty()) viewModel.loadMovies(false)
+            if (!isSetOnMarked && viewModel.isMovieListEmpty()) viewModel.fetchMovies(false)
         }
 
         override fun onLost(network: Network) {
             super.onLost(network)
-            showToast("Internet connection was lost")
+            showToast(this@ContentActivity, "Internet connection was lost")
         }
     }
 }
